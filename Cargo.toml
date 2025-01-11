@@ -1,6 +1,5 @@
 [workspace]
-
-members = ["client"]
+members = ["client", "app"]
 
 [package]
 name = "vara-app"
@@ -8,10 +7,11 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-vara-sails = "0.1"
+vara-sails = { path = "../sails-vara/vara-app/vara-sails" }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 vara-app-app = { path = "app" }
+tokio = { version = "1.41", features = ["full"] }  # Add full tokio runtime support
 
 [build-dependencies]
 vara-app-app = { path = "app" }
@@ -26,3 +26,4 @@ tokio = { version = "1.41", features = ["rt", "macros"] }
 
 [features]
 wasm-binary = []
+default = ["wasm-binary"]

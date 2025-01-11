@@ -1,14 +1,87 @@
-#![no_std]
+use vara_sails::prelude::*;
+mod app; // Import app module for reusable helpers
 
-#[cfg(target_arch = "wasm32")]
-pub use vara_app_app::wasm::*;
+#[contract]
+pub struct DeSciFunding {
+    // Mapping of project IDs to funding data
+    projects: Map<u64, Project>,
+    project_count: u64,
+}
 
-#[cfg(feature = "wasm-binary")]
-#[cfg(not(target_arch = "wasm32"))]
-pub use code::WASM_BINARY_OPT as WASM_BINARY;
+// Structure to represent a research project
+#[derive(Serialize, Deserialize, Clone)]
+pub struct Project {
+    id: u64,
+    name: String,
+    description: String,
+    funding_goal: u128,
+    funds_raised: u128,
+    contributors: Vec<Contributor>,
+    owner: Address,
+}
 
-#[cfg(feature = "wasm-binary")]
-#[cfg(not(target_arch = "wasm32"))]
-mod code {
-    include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
+// Structure to represent a contributor
+#[derive(Serialize, Deserialize, Clone)]
+pub struct Contributor {
+    address: Address,
+    amount: u128,
+}
+
+impl DeSciFunding {
+    #[init]
+    pub fn new() -> Self {
+        Self {
+            projects: Map::new(),
+            project_count: 0,
+        }
+    }
+
+    // Function to create a new research project
+    pub fn create_project(&mut self, name: String, description: String, funding_goal: u128) {
+        app::validate_project(&name, &description, funding_goal).expect("Invalid project details");
+
+        let id = self.project_count + 1;
+        let project = Project {
+            id,
+            name,
+            description,
+            funding_goal,
+            funds_raised: 0,
+            contributors: Vec::new(),
+            owner: msg::sender(),
+        };
+        self.projects.insert(id, project);
+        self.project_count = id;
+    }
+
+    // Function to fund a research project
+    pub fn fund_project(&mut self, project_id: u64, amount: u128) {
+        let sender = msg::sender();
+        let mut project = self.projects.get(&project_id).expect("Project not found");
+
+        project.funds_raised += amount;
+        project.contributors.push(Contributor {
+            address: sender,
+            amount,
+        });
+
+        self.projects.insert(project_id, project);
+    }
+
+    // Function to view a project
+    pub fn get_project(&self, project_id: u64) -> Project {
+        self.projects.get(&project_id).expect("Project not found")
+    }
+
+    // Function to distribute rewards (if any)
+    pub fn distribute_rewards(&mut self, project_id: u64, reward_token: Address) {
+        let project = self.projects.get(&project_id).expect("Project not found");
+        assert!(project.funding_goal <= project.funds_raised, "Funding goal not met");
+
+        for contributor in project.contributors.iter() {
+            let reward_amount = app::calculate_reward(contributor.amount, project.funding_goal, 1000);
+            // Mock function for token transfer
+            msg::send(contributor.address, reward_token, reward_amount);
+        }
+    }
 }
