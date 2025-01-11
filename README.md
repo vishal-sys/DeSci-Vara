@@ -70,4 +70,4 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ## Contact
 
-For any inquiries, please contact [yourname](mailto:your.vishalsaroj6363@gmail.com).
+For any inquiries, please contact [Vishal](mailto:your.vishalsaroj6363@gmail.com).
